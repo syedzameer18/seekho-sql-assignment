@@ -60,8 +60,8 @@ FROM first_activity fa
 LEFT JOIN next_day_activity nda ON fa.user_id = nda.user_id
 GROUP BY fa.first_date
 ORDER BY fa.first_date;
-### 🕒 User Sessions Query
-This query identifies user sessions, where a session is a sequence of events occurring within 30 minutes of the previous event.
+### **📊 User Sessions Query**
+This query identifies **user sessions**, where a session is a sequence of events occurring within 30 minutes of the previous event.
 
 sql
 Copy
