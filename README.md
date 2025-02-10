@@ -60,38 +60,7 @@ FROM first_activity fa
 LEFT JOIN next_day_activity nda ON fa.user_id = nda.user_id
 GROUP BY fa.first_date
 ORDER BY fa.first_date;
-### **📊 User Sessions Query**
-This query identifies **user sessions**, where a session is a sequence of events occurring within 30 minutes of the previous event.
 
-sql
-Copy
-Edit
-WITH event_data AS (
-    SELECT user_id, event_time,
-           LAG(event_time) OVER (PARTITION BY user_id ORDER BY event_time) AS prev_event_time
-    FROM user_events
-),
-session_data AS (
-    SELECT user_id, event_time,
-           CASE 
-               WHEN TIMESTAMPDIFF(MINUTE, prev_event_time, event_time) > 30 OR prev_event_time IS NULL 
-               THEN 1 ELSE 0 
-           END AS new_session
-    FROM event_data
-),
-session_assignment AS (
-    SELECT user_id, event_time, 
-           SUM(new_session) OVER (PARTITION BY user_id ORDER BY event_time) AS session_id
-    FROM session_data
-)
-SELECT user_id, session_id, 
-       MIN(event_time) AS session_start_time, 
-       MAX(event_time) AS session_end_time, 
-       TIMEDIFF(MAX(event_time), MIN(event_time)) AS session_duration,
-       COUNT(event_time) AS event_count
-FROM session_assignment
-GROUP BY user_id, session_id
-ORDER BY user_id, session_id;
 🛠️ How to Run
 1️⃣ Setup MySQL Database
 sql
