@@ -1,43 +1,50 @@
 # 🚀 Seekho SQL Assignment
 
 ## 📌 Overview
-This project contains SQL queries to analyze user retention and session behavior for the **Seekho app**. The goal is to:
-1. **Calculate Day 1 Retention Rate** – Identify new users and check how many return the next day.
-2. **Identify User Sessions** – Group events into sessions based on a 30-minute inactivity threshold.
-3. **Suggest Strategies to Improve Day-on-Day Retention** – Propose data-driven and product strategies.
+
+This project contains **SQL queries** for analyzing user engagement on the **Seekho app**.\
+The assignment focuses on two key tasks:
+
+1. **🌊 Day 1 Retention Query** – Identify new users and calculate how many return the next day.
+2. **👒 User Sessions Query** – Identify user sessions using a **30-minute inactivity rule**.
 
 ---
 
 ## 📂 Table of Contents
+
 - [Database Schema](#-database-schema)
 - [Queries](#-queries)
   - [Day 1 Retention Query](#-day-1-retention-query)
   - [User Sessions Query](#-user-sessions-query)
 - [How to Run](#-how-to-run)
 - [Retention Strategy](#-retention-strategy)
+- [Author](#-author)
 
 ---
 
-## 🗄️ Database Schema
+## 🟢 Database Schema
 
-### **1️⃣ user_activity (User Login Activity)**
-| Column Name   | Data Type |
-|--------------|-----------|
-| user_id      | INT       |
-| activity_date | DATE      |
+### **1️⃣ user\_activity (User Login Activity)**
 
-### **2️⃣ user_events (User Events Tracking)**
-| Column Name   | Data Type  |
-|--------------|------------|
-| user_id      | INT        |
-| event_type   | STRING     |
-| event_time   | TIMESTAMP  |
+| Column Name    | Data Type |
+| -------------- | --------- |
+| user\_id       | INT       |
+| activity\_date | DATE      |
+
+### **2️⃣ user\_events (User Events Tracking)**
+
+| Column Name | Data Type |
+| ----------- | --------- |
+| user\_id    | INT       |
+| event\_type | STRING    |
+| event\_time | TIMESTAMP |
 
 ---
 
 ## 💡 Queries
 
-### **📊 Day 1 Retention Query**
+### **🌊 Task 1: Day 1 Retention Query**
+
 This query calculates **Day 1 retention rate**, which is the percentage of users who return exactly one day after their first login.
 
 ```sql
@@ -60,18 +67,57 @@ FROM first_activity fa
 LEFT JOIN next_day_activity nda ON fa.user_id = nda.user_id
 GROUP BY fa.first_date
 ORDER BY fa.first_date;
+```
 
-🛠️ How to Run
-1️⃣ Setup MySQL Database
-sql
-Copy
-Edit
+---
+
+### **👒 Task 2: User Sessions Query**
+
+This query identifies **user sessions**, where a session is a sequence of events occurring within **30 minutes** of the previous event.
+
+```sql
+WITH event_data AS (
+    SELECT user_id, event_time,
+           LAG(event_time) OVER (PARTITION BY user_id ORDER BY event_time) AS prev_event_time
+    FROM user_events
+),
+session_data AS (
+    SELECT user_id, event_time,
+           CASE
+               WHEN TIMESTAMPDIFF(MINUTE, prev_event_time, event_time) > 30 OR prev_event_time IS NULL
+               THEN 1 ELSE 0
+           END AS new_session
+    FROM event_data
+),
+session_assignment AS (
+    SELECT user_id, event_time,
+           SUM(new_session) OVER (PARTITION BY user_id ORDER BY event_time) AS session_id
+    FROM session_data
+)
+SELECT user_id, session_id,
+       MIN(event_time) AS session_start_time,
+       MAX(event_time) AS session_end_time,
+       TIMEDIFF(MAX(event_time), MIN(event_time)) AS session_duration,
+       COUNT(event_time) AS event_count
+FROM session_assignment
+GROUP BY user_id, session_id
+ORDER BY user_id, session_id;
+```
+
+---
+
+## 🛠️ How to Run
+
+### **1️⃣ Setup MySQL Database**
+
+```sql
 CREATE DATABASE seekho_db;
 USE seekho_db;
-2️⃣ Create Tables
-sql
-Copy
-Edit
+```
+
+### **2️⃣ Create Tables**
+
+```sql
 CREATE TABLE user_activity (
     user_id INT NOT NULL,
     activity_date DATE NOT NULL,
@@ -84,10 +130,11 @@ CREATE TABLE user_events (
     event_time TIMESTAMP NOT NULL,
     PRIMARY KEY (user_id, event_time)
 );
-3️⃣ Insert Sample Data
-sql
-Copy
-Edit
+```
+
+### **3️⃣ Insert Sample Data**
+
+```sql
 INSERT INTO user_activity (user_id, activity_date) VALUES
 (1, '2023-09-10'), (2, '2023-09-10'), (1, '2023-09-11'),
 (3, '2023-09-11'), (2, '2023-09-12'), (4, '2023-09-12'),
@@ -101,23 +148,35 @@ INSERT INTO user_events (user_id, event_type, event_time) VALUES
 (2, 'click', '2023-09-10 09:00:00'),
 (2, 'scroll', '2023-09-10 09:20:00'),
 (2, 'click', '2023-09-10 10:30:00');
-4️⃣ Run Queries
-After setting up the database, run the Day 1 retention and User sessions queries.
+```
 
-📈 Retention Strategy
-To improve Day-on-Day retention, we can implement:
+### **4️⃣ Run Queries**
 
-1️⃣ Personalized Content – Recommend content based on user interests.
-2️⃣ Gamification – Use badges, streaks, and rewards for consistent engagement.
-3️⃣ Push Notifications – Remind users about content they left incomplete.
-4️⃣ Community Engagement – Encourage discussions, quizzes, and peer interactions.
-5️⃣ A/B Testing – Test different UI/UX changes to optimize retention.
+After setting up the database, run the **Day 1 retention** and **User sessions** queries.
 
-📎 Resources
-MySQL Workbench
-GitHub
-Seekho Platform
-👤 Author
-Syed Zameer
+---
+
+## 📈 Retention Strategy
+
+To **improve Day-on-Day retention**, we can implement:
+
+1️⃣ **Personalized Content** – Recommend content based on user interests.\
+2️⃣ **Gamification** – Use badges, streaks, and rewards for consistent engagement.\
+3️⃣ **Push Notifications** – Remind users about content they left incomplete.\
+4️⃣ **Community Engagement** – Encourage discussions, quizzes, and peer interactions.\
+5️⃣ **A/B Testing** – Test different UI/UX changes to optimize retention.
+
+---
+
+## 👤 Author
+
+**Syed Zameer**\
 🚀 Data Analyst | SQL Enthusiast
+
+---
+
+## ⭐ Contribute & Feedback
+
+If you have suggestions, feel free to open an **issue** or create a **pull request**!
+
 
