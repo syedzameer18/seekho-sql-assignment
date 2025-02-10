@@ -1,8 +1,3 @@
-# seekho-sql-assignment
-README.md for GitHub
-markdown
-Copy
-Edit
 # 🚀 Seekho SQL Assignment
 
 ## 📌 Overview
